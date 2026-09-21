@@ -18,7 +18,11 @@ exports.userpostregister=async (req,res,next)=>{
     sendWelcomeEmail(user.email, user.name);
 
     const token=await Jwt.sign({userId:user._id,},process.env.JWT_SECRET,{expiresIn:"3d"})
-    res.cookie("token",token);
+    res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+        sameSite: "Strict"
+    });
     
     res.status(201).json({
         message:"User registered successfully",
