@@ -19,10 +19,10 @@ const transactionschema = new mongoose.Schema({
     },
 
     // Destination account receiving the transfer amount
-    toAcccount: {
+    toAccount: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "account",
-        required: [true, "ToAccount is required"],
+        required: [true, "toAccount is required"],
         index: true
     },
 

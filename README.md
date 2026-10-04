@@ -133,6 +133,7 @@ The server will start at `http://localhost:3005`.
 | Method | Endpoint | Description | Auth Required |
 | --- | --- | --- | --- |
 | `POST` | `/api/transaction/` | Process a transfer between accounts, post ledger entries, and send confirmation email | Yes (`Bearer <token>` or Cookie) |
+| `GET` | `/api/transaction/get-initial-funds` | Seed initial funds to a target account from system user account | Yes (System User: `authSystemUsermiddleware`) |
 
 #### Request Payload for `POST /api/transaction/`:
 
@@ -142,6 +143,16 @@ The server will start at `http://localhost:3005`.
   "toaccount": "651a2b3c4d5e6f7a8b9c0d1f",
   "amount": 500,
   "idempotencykey": "unique-uuid-v4-key-12345"
+}
+```
+
+#### Request Payload for `GET /api/transaction/get-initial-funds`:
+
+```json
+{
+  "toaccount": "651a2b3c4d5e6f7a8b9c0d1f",
+  "amount": 1000,
+  "idempotencykey": "initial-fund-uuid-001"
 }
 ```
 

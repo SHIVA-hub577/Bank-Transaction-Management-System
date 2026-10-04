@@ -33,6 +33,13 @@ const userschema = new mongoose.Schema({
         required: [true, "Password is required"],
         minlength: [6, "Password should have minimum length of 6 characters"],
         select: false // Excludes password from query results unless explicitly selected using +password
+    },
+    SystemUser:{
+        type:Boolean,
+        default:false,
+        immutable:true,
+        select:false
+
     }
 
 }, {
@@ -68,4 +75,4 @@ userschema.methods.comparepassword = async function (candidatePassword) {
 };
 
 const Usermodel = mongoose.model('user', userschema);
-module.exports = Usermodel;
+module.exports = Usermodel;

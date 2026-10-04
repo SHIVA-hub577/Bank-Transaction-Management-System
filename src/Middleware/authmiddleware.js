@@ -44,4 +44,39 @@ exports.AuthMiddleware = async (req, res, next) => {
             message: "Unauthorized access. Invalid or expired token."
         });
     }
-};
+};
+
+
+exports.authSystemUsermiddleware=async (req,res,next)=>{
+    // Extract token from request cookie OR Authorization bearer header
+    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(401).json({
+            message: "Unauthorized access. Authentication token is missing."
+        });
+    }
+
+    try {
+        // Verify JWT signature using secret key
+        const decode = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Retrieve user details from database using decoded user ID
+        const User = await usermodel.findById(decode.userId).select("+SystemUser");
+        if (!User || !User.SystemUser) {
+            return res.status(403).json({
+                message: "Unauthorized access. Not a System User"
+            });
+        }
+
+        // Attach authenticated user object to request for downstream controller handlers
+        req.user = User;
+        return next();
+    } catch (error) {
+        // Token invalid, expired, or tampered with
+        return res.status(401).json({
+            message: "Unauthorized access. Invalid or expired token."
+        });
+    }
+}

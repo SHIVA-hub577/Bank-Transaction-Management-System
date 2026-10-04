@@ -1,6 +1,7 @@
 const accountmodel = require("../models/Accountmodel");
 const transactionmodel = require("../models/Transactionmodel");
 const Ledgermodel = require("../models/Ledgermodel");
+const usermodel = require("../models/usermodel");
 const mongoose = require("mongoose");
 const { sendTransactionEmail } = require("../services/Emailservices");
 
@@ -102,7 +103,7 @@ exports.createtransaction = async (req, res, next) => {
             // Step 7: Create initial transaction record
             const transaction = await transactionmodel.create([{
                 fromAccount: fromaccount,
-                toAcccount: toaccount,
+                toAccount: toaccount,
                 amount: amount,
                 idempotencykey: idempotencykey,
                 status: "PENDING"
@@ -165,4 +166,115 @@ exports.createtransaction = async (req, res, next) => {
         // Forward error to Express error handler middleware
         return next(error);
     }
-};
+};
+
+
+
+exports.createInitialFundsTransaction = async (req, res, next) => {
+    try {
+        const { toaccount, amount, idempotencykey } = req.body;
+
+        if (!toaccount || !amount || !idempotencykey) {
+            return res.status(400).json({
+                message: "All details (toaccount, amount, idempotencykey) are required."
+            });
+        }
+
+        if (amount <= 0) {
+            return res.status(400).json({
+                message: "Amount must be greater than zero."
+            });
+        }
+
+        // Check if destination account exists
+        const touseraccount = await accountmodel.findById(toaccount);
+        if (!touseraccount) {
+            return res.status(404).json({
+                message: "Invalid toaccount details. Destination account not found."
+            });
+        }
+
+        // Verify that the authenticated user is indeed a system user
+        if (!req.user || !req.user.SystemUser) {
+            return res.status(403).json({
+                message: "Unauthorized access. Not a system user."
+            });
+        }
+
+        // Idempotency check: prevent duplicate fund creation
+        const existingTransaction = await transactionmodel.findOne({ idempotencykey });
+        if (existingTransaction) {
+            if (existingTransaction.status === "COMPLETED") {
+                return res.status(200).json({
+                    message: "Initial funds transaction already completed.",
+                    transaction: existingTransaction
+                });
+            }
+            return res.status(409).json({
+                message: `Transaction with this idempotency key already exists in ${existingTransaction.status} state.`
+            });
+        }
+
+        // Find or create the system user's financial account
+        let fromuseraccount = await accountmodel.findOne({ user: req.user._id });
+        if (!fromuseraccount) {
+            fromuseraccount = await accountmodel.create({
+                user: req.user._id,
+                status: "ACTIVE",
+                currency: "INR"
+            });
+        }
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const transaction = await transactionmodel.create([{
+                fromAccount: fromuseraccount._id,
+                toAccount: touseraccount._id,
+                amount: amount,
+                idempotencykey: idempotencykey,
+                status: "PENDING"
+            }], { session });
+
+            const createdTransaction = transaction[0];
+
+            // Post DEBIT ledger entry for system account
+            await Ledgermodel.create([{
+                account: fromuseraccount._id,
+                amount: amount,
+                transactionId: createdTransaction._id,
+                type: "DEBIT"
+            }], { session });
+
+            // Post CREDIT ledger entry for recipient account
+            await Ledgermodel.create([{
+                account: touseraccount._id,
+                amount: amount,
+                transactionId: createdTransaction._id,
+                type: "CREDIT"
+            }], { session });
+
+            // Mark transaction as COMPLETED
+            createdTransaction.status = "COMPLETED";
+            await createdTransaction.save({ session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return res.status(200).json({
+                message: "Initial funds added successfully",
+                transaction: createdTransaction
+            });
+
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+            throw error;
+        }
+
+    } catch (error) {
+        return next(error);
+    }
+};
+

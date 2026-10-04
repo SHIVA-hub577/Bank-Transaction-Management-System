@@ -19,5 +19,5 @@ const authmiddleware = require("../Middleware/authmiddleware");
  * @access  Private (Requires valid JWT in cookies or Authorization header)
  */
 transactionrouter.post("/", authmiddleware.AuthMiddleware, transactioncontroller.createtransaction);
-
-module.exports = transactionrouter;
+transactionrouter.get("/get-initial-funds",authmiddleware.authSystemUsermiddleware,transactioncontroller.createInitialFundsTransaction)
+module.exports = transactionrouter;
