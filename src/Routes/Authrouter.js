@@ -25,4 +25,7 @@ authrouter.post("/register", authcontroller.userpostregister);
 authrouter.post("/login", authcontroller.userlogin);
 authrouter.get("/login", authcontroller.userlogin);
 
-module.exports = authrouter;
+
+authrouter.get("/logout",authcontroller.userlogout);
+
+module.exports = authrouter;

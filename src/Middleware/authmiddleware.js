@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const usermodel = require("../models/usermodel");
-
+const tokenblacklistedmodel=require("../models/Tokenblacklistmodel");
 /**
  * ============================================================================
  * AUTHENTICATION MIDDLEWARE
@@ -21,6 +21,14 @@ exports.AuthMiddleware = async (req, res, next) => {
         return res.status(401).json({
             message: "Unauthorized access. Authentication token is missing."
         });
+    }
+
+    const isblacklisted=await tokenblacklistedmodel.findOne({token:token});
+
+    if(isblacklisted){
+        return res.status(400).json({
+            message:"Invalid token,user logged out"
+        })
     }
 
     try {
@@ -56,6 +64,13 @@ exports.authSystemUsermiddleware=async (req,res,next)=>{
         return res.status(401).json({
             message: "Unauthorized access. Authentication token is missing."
         });
+    }
+     const isblacklisted=await tokenblacklistedmodel.findOne({token:token});
+
+    if(isblacklisted){
+        return res.status(400).json({
+            message:"Invalid token,user logged out"
+        })
     }
 
     try {

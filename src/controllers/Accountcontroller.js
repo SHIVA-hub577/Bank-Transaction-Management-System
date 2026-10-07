@@ -36,4 +36,37 @@ exports.CreateAccount = async (req, res, next) => {
     } catch (error) {
         return next(error);
     }
-};
+};
+
+
+exports.getaccountdata=async(req,res,next)=>{
+
+    const accounts=await accountmodel.find({user:req.user._id});
+    return res.status(200).json({
+        accounts
+    });
+}
+
+
+exports.fetchuserbalance=async(req,res,next)=>{
+
+    const accountId=req.params.accountId;
+
+    const isaccount=await accountmodel.findOne({
+        user:req.user._id,
+        _id:accountId
+    });
+
+    if(!isaccount){
+        return res.status(404).json({
+            message:"Account not found"
+        })
+    }
+
+    const balance=await isaccount.getbalance();
+     return res.status(200).json({
+            accountId: isaccount._id,
+            balance
+        });
+}
+

@@ -18,4 +18,7 @@ const AuthMiddleware = require("../Middleware/authmiddleware");
  */
 accountrouter.post("/", AuthMiddleware.AuthMiddleware, accountcontroller.CreateAccount);
 
-module.exports = accountrouter;
+accountrouter.get("/get-accounts",AuthMiddleware.AuthMiddleware,accountcontroller.getaccountdata);
+
+accountrouter.get("/balance/:accountId",AuthMiddleware.AuthMiddleware,accountcontroller.fetchuserbalance);
+module.exports = accountrouter;

@@ -1,7 +1,7 @@
 const usermodel = require("../models/usermodel");
 const Jwt = require("jsonwebtoken");
 const { sendWelcomeEmail } = require("../services/Emailservices");
-
+const tokenblacklistmodel=require("../models/Tokenblacklistmodel");
 /**
  * ============================================================================
  * AUTHENTICATION CONTROLLER
@@ -120,4 +120,21 @@ exports.userlogin = async (req, res, next) => {
     } catch (error) {
         return next(error);
     }
-};
+};
+
+
+exports.userlogout=async (req,res,next)=>{
+    const token=req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    if(!token){
+        return res.status(400).json({
+            message:"No token exists,to logout"
+        })
+    }
+    const tokenblacklist=await tokenblacklistmodel.create({token:token});
+    res.clearCookie("token");
+    return res.status(200).json({
+        message:"User logged out successfully",
+        tokenblacklist
+    });
+}

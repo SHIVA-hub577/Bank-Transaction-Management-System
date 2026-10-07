@@ -95,13 +95,14 @@ exports.createtransaction = async (req, res, next) => {
             });
         }
 
+        
         // Step 6: Begin atomic Mongoose database session
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
             // Step 7: Create initial transaction record
-            const transaction = await transactionmodel.create([{
+             const transaction = await transactionmodel.create([{
                 fromAccount: fromaccount,
                 toAccount: toaccount,
                 amount: amount,
